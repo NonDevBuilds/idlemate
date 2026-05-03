@@ -13,6 +13,9 @@
 	"entrypoints": {
 		"server": ["party.thebloc.fakeplayer.BlocFakePlayer"]
 	},
+	"mixins": [
+		"bloc_fakeplayer.mixins.json"
+	],
 	"depends": {
 		"fabricloader": ">=0.18.6",
 		"fabric-api": "*",

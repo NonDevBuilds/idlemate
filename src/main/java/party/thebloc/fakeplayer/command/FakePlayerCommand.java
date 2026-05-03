@@ -10,6 +10,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.permissions.Permissions;
 import org.jetbrains.annotations.Nullable;
+import party.thebloc.fakeplayer.FakePlayerManager;
 
 import java.util.regex.Pattern;
 
@@ -38,26 +39,65 @@ public final class FakePlayerCommand {
 
 	private static int spawn(CommandContext<CommandSourceStack> ctx, @Nullable String requestedName)
 			throws CommandSyntaxException {
+		CommandSourceStack src = ctx.getSource();
 		String name = requestedName == null ? DEFAULT_NAME : requestedName;
 		if (!NAME_PATTERN.matcher(name).matches()) {
-			ctx.getSource().sendFailure(Component.literal(
-				"Invalid name '" + name + "'. Must match [A-Za-z0-9_]{1,16}."));
+			src.sendFailure(Component.literal(
+					"Invalid name '" + name + "'. Must match [A-Za-z0-9_]{1,16}."));
 			return 0;
 		}
-		ctx.getSource().sendSuccess(() ->
-			Component.literal("[fakeplayer] spawn '" + name + "': not yet implemented (Phase 1 stub)."), false);
-		return Command.SINGLE_SUCCESS;
+
+		var player = src.getPlayerOrException();
+		var result = FakePlayerManager.spawn(
+				src.getServer(),
+				name,
+				(net.minecraft.server.level.ServerLevel) player.level(),
+				player.position(),
+				player.getYRot(),
+				player.getXRot());
+
+		return switch (result) {
+			case FakePlayerManager.SpawnResult.Spawned s -> {
+				src.sendSuccess(() -> Component.literal(
+						"Spawned fake player '" + s.name() + "'."), true);
+				yield Command.SINGLE_SUCCESS;
+			}
+			case FakePlayerManager.SpawnResult.AlreadyActive a -> {
+				src.sendFailure(Component.literal(
+						"A fake player ('" + a.existingName()
+								+ "') is already active. Run /fakeplayer kill first."));
+				yield 0;
+			}
+		};
 	}
 
 	private static int kill(CommandContext<CommandSourceStack> ctx) {
-		ctx.getSource().sendSuccess(() ->
-			Component.literal("[fakeplayer] kill: not yet implemented (Phase 1 stub)."), false);
-		return Command.SINGLE_SUCCESS;
+		CommandSourceStack src = ctx.getSource();
+		var result = FakePlayerManager.kill(src.getServer());
+		return switch (result) {
+			case FakePlayerManager.KillResult.Killed k -> {
+				src.sendSuccess(() -> Component.literal(
+						"Killed fake player '" + k.name() + "'."), true);
+				yield Command.SINGLE_SUCCESS;
+			}
+			case FakePlayerManager.KillResult.NoneActive n -> {
+				src.sendFailure(Component.literal("No fake player is active."));
+				yield 0;
+			}
+		};
 	}
 
 	private static int info(CommandContext<CommandSourceStack> ctx) {
-		ctx.getSource().sendSuccess(() ->
-			Component.literal("[fakeplayer] info: no fake player active (Phase 1 stub)."), false);
+		CommandSourceStack src = ctx.getSource();
+		var info = FakePlayerManager.info(src.getServer());
+		if (info.isEmpty()) {
+			src.sendSuccess(() -> Component.literal("No fake player is active."), false);
+		} else {
+			var i = info.get();
+			src.sendSuccess(() -> Component.literal(String.format(
+					"Fake player '%s' at %.1f %.1f %.1f in %s",
+					i.name(), i.position().x, i.position().y, i.position().z, i.dimension())), false);
+		}
 		return Command.SINGLE_SUCCESS;
 	}
 }
