@@ -7,8 +7,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import party.thebloc.fakeplayer.FakePlayerManager;
 
@@ -29,6 +32,11 @@ public final class FakePlayerCommand {
 						.executes(ctx -> spawn(ctx, null))
 						.then(Commands.argument("name", StringArgumentType.word())
 							.executes(ctx -> spawn(ctx, StringArgumentType.getString(ctx, "name")))))
+					.then(Commands.literal("spawn-at")
+						.then(Commands.argument("pos", Vec3Argument.vec3())
+							.executes(ctx -> spawnAt(ctx, null))
+							.then(Commands.argument("name", StringArgumentType.word())
+								.executes(ctx -> spawnAt(ctx, StringArgumentType.getString(ctx, "name"))))))
 					.then(Commands.literal("kill")
 						.executes(FakePlayerCommand::kill))
 					.then(Commands.literal("info")
@@ -60,6 +68,35 @@ public final class FakePlayerCommand {
 			case FakePlayerManager.SpawnResult.Spawned s -> {
 				src.sendSuccess(() -> Component.literal(
 						"Spawned fake player '" + s.name() + "'."), true);
+				yield Command.SINGLE_SUCCESS;
+			}
+			case FakePlayerManager.SpawnResult.AlreadyActive a -> {
+				src.sendFailure(Component.literal(
+						"A fake player ('" + a.existingName()
+								+ "') is already active. Run /fakeplayer kill first."));
+				yield 0;
+			}
+		};
+	}
+
+	/** Console/RCON-friendly spawn — explicit coords, source's level. */
+	private static int spawnAt(CommandContext<CommandSourceStack> ctx, @Nullable String requestedName)
+			throws CommandSyntaxException {
+		CommandSourceStack src = ctx.getSource();
+		String name = requestedName == null ? DEFAULT_NAME : requestedName;
+		if (!NAME_PATTERN.matcher(name).matches()) {
+			src.sendFailure(Component.literal(
+					"Invalid name '" + name + "'. Must match [A-Za-z0-9_]{1,16}."));
+			return 0;
+		}
+		Vec3 pos = Vec3Argument.getVec3(ctx, "pos");
+		ServerLevel level = src.getLevel();
+
+		var result = FakePlayerManager.spawn(src.getServer(), name, level, pos, 0f, 0f);
+		return switch (result) {
+			case FakePlayerManager.SpawnResult.Spawned s -> {
+				src.sendSuccess(() -> Component.literal(
+						"Spawned fake player '" + s.name() + "' at " + pos + "."), true);
 				yield Command.SINGLE_SUCCESS;
 			}
 			case FakePlayerManager.SpawnResult.AlreadyActive a -> {

@@ -3,8 +3,7 @@
 	"package": "party.thebloc.fakeplayer.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ConnectionAccessor",
-		"ServerGameListenerPolymerCompat"
+		"ConnectionAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

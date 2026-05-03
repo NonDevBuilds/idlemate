@@ -9,6 +9,15 @@ base {
 	archivesName = project.archives_base_name
 }
 
+repositories {
+	// Polymer (Patbox / Nucleoid) — runtime-only test dep so we can repro
+	// the polymer holder_lookup NPE locally and verify our compat fix.
+	maven {
+		name = 'Nucleoid'
+		url = 'https://maven.nucleoid.xyz'
+	}
+}
+
 loom {
 	// Server-side only — no client source set, no client-only classes can sneak in.
 	mods {
@@ -23,6 +32,11 @@ dependencies {
 
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Runtime-only test dep — included in `./gradlew runServer` but NOT in the
+	// published mod jar. Pulls in polymer-core which is what reproduces the
+	// holder_lookup NPE we're debugging.
+	runtimeOnly "eu.pb4:polymer-bundled:${project.polymer_version}"
 }
 
 processResources {

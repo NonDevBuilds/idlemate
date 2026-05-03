@@ -1,10 +1,14 @@
 package party.thebloc.fakeplayer;
 
 import com.mojang.authlib.GameProfile;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContextProvider;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
@@ -27,6 +31,11 @@ import java.util.UUID;
 public final class FakePlayerManager {
 	private FakePlayerManager() {}
 
+	/** Polymer's per-connection registry lookup key. Setting this before
+	 *  placeNewPlayer prevents the chunk-send NPE that crashes plain Carpet. */
+	private static final PacketContext.Key<RegistryAccess> POLYMER_HOLDER_LOOKUP =
+			PacketContext.key(Identifier.fromNamespaceAndPath("polymer", "holder_lookup"));
+
 	private static volatile UUID activeId;
 	private static volatile String activeName;
 
@@ -39,11 +48,19 @@ public final class FakePlayerManager {
 		GameProfile profile = new GameProfile(uuid, name);
 		ClientInformation clientInfo = ClientInformation.createDefault();
 
-		ServerPlayer player = new ServerPlayer(server, level, profile, clientInfo);
+		ServerPlayer player = new FakePlayer(server, level, profile, clientInfo);
 		player.snapTo(pos.x, pos.y, pos.z, yaw, pitch);
 
 		FakeConnection connection = new FakeConnection(PacketFlow.SERVERBOUND);
 		CommonListenerCookie cookie = new CommonListenerCookie(profile, 0, clientInfo, false);
+
+		// Polymer compat: populate `polymer:holder_lookup` on the connection's
+		// PacketContext BEFORE placeNewPlayer triggers chunk send. The
+		// ServerCommonPacketListenerImpl's getPacketContext() delegates to the
+		// connection's, so setting here covers both lookup paths.
+		PacketContext ctx = ((PacketContextProvider) (Object) connection).getPacketContext();
+		ctx.set(POLYMER_HOLDER_LOOKUP, server.registryAccess());
+		BlocFakePlayer.LOG.info("Pre-spawn polymer holder_lookup set on connection (ctx={})", ctx);
 
 		PlayerList list = server.getPlayerList();
 		list.placeNewPlayer(connection, player, cookie);
