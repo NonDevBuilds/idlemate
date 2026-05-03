@@ -21,9 +21,6 @@ loom {
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
-	// Yarn mappings — official Fabric mappings format.
-	mappings "net.fabricmc:yarn:${project.minecraft_version}+build.+:v2"
-
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
