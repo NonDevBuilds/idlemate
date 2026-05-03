@@ -157,6 +157,7 @@ public final class FakePlayerManager {
 		java.util.UUID id = activeId;
 		if (id == null || id.equals(joiner.getUUID())) return;
 		joiner.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(id)));
+		BlocFakePlayer.LOG.info("[bloc-fakeplayer] sent tab-list-remove({}) to {}", id, joiner.getName().getString());
 	}
 
 	/**
