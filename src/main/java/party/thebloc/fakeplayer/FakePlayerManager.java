@@ -9,12 +9,14 @@ import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
@@ -74,6 +76,13 @@ public final class FakePlayerManager {
 		activeName = name;
 		BlocFakePlayer.LOG.info("Spawned fake player '{}' at {} {} {} in {}",
 				name, pos.x, pos.y, pos.z, level.dimension().identifier());
+
+		// Persist for auto-respawn on next server start.
+		FakePlayerPersistence.save(server, new FakePlayerPersistence.Record(
+				name,
+				level.dimension().identifier().toString(),
+				pos.x, pos.y, pos.z, yaw, pitch));
+
 		return SpawnResult.spawned(uuid, name);
 	}
 
@@ -90,8 +99,39 @@ public final class FakePlayerManager {
 		}
 		activeId = null;
 		activeName = null;
+		FakePlayerPersistence.delete(server);
 		BlocFakePlayer.LOG.info("Killed fake player '{}'", name);
 		return KillResult.killed(name);
+	}
+
+	/**
+	 * Auto-respawn the persisted fake player after a server restart.
+	 * Best-effort: any failure (missing dimension, malformed file, etc.)
+	 * logs a warning, deletes the stale record, and returns. Never throws.
+	 */
+	public static synchronized void tryRestoreFromPersistence(MinecraftServer server) {
+		Optional<FakePlayerPersistence.Record> opt = FakePlayerPersistence.load(server);
+		if (opt.isEmpty()) return;
+		FakePlayerPersistence.Record r = opt.get();
+		try {
+			ResourceKey<Level> dimKey = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
+					Identifier.parse(r.dimension()));
+			ServerLevel level = server.getLevel(dimKey);
+			if (level == null) {
+				BlocFakePlayer.LOG.warn("[bloc-fakeplayer] persisted dimension '{}' not found; clearing record", r.dimension());
+				FakePlayerPersistence.delete(server);
+				return;
+			}
+			SpawnResult result = spawn(server, r.name(), level, new Vec3(r.x(), r.y(), r.z()), r.yaw(), r.pitch());
+			if (result instanceof SpawnResult.Spawned) {
+				BlocFakePlayer.LOG.info("Auto-respawned fake player '{}' from persistence", r.name());
+			} else {
+				BlocFakePlayer.LOG.warn("[bloc-fakeplayer] auto-respawn unexpected result: {}", result);
+			}
+		} catch (Exception e) {
+			BlocFakePlayer.LOG.warn("[bloc-fakeplayer] auto-respawn failed ({}); clearing record", e.getMessage());
+			FakePlayerPersistence.delete(server);
+		}
 	}
 
 	public static synchronized Optional<Info> info(MinecraftServer server) {
