@@ -8,6 +8,7 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -18,6 +19,8 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -101,6 +104,12 @@ public final class FakePlayerManager {
 		player.snapTo(pos.x, pos.y, pos.z, yaw, pitch);
 		player.setHealth(20.0f);
 
+		// Hide from tab list. ServerPlayer.allowsListing() in 26.1 only gates
+		// the SLP sample list — Entry(ServerPlayer) ctor hardcodes listed=true
+		// regardless. Send a follow-up Remove packet so the bot doesn't show
+		// up in connected players' tab lists.
+		hideFromTabList(server, uuid);
+
 		activeId = uuid;
 		activeName = name;
 		BlocFakePlayer.LOG.info("Spawned fake player '{}' at {} {} {} in {}",
@@ -131,6 +140,23 @@ public final class FakePlayerManager {
 		FakePlayerPersistence.delete(server);
 		BlocFakePlayer.LOG.info("Killed fake player '{}'", name);
 		return KillResult.killed(name);
+	}
+
+	/** Broadcast a Remove packet to hide the given UUID from every connected player's tab list. */
+	private static void hideFromTabList(MinecraftServer server, java.util.UUID uuid) {
+		ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(List.of(uuid));
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+			if (!p.getUUID().equals(uuid)) {
+				p.connection.send(packet);
+			}
+		}
+	}
+
+	/** Send a tab-list remove for the active fake player to a single newly-joined player. */
+	public static void hideActiveFromJoiner(ServerPlayer joiner) {
+		java.util.UUID id = activeId;
+		if (id == null || id.equals(joiner.getUUID())) return;
+		joiner.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(id)));
 	}
 
 	/**
