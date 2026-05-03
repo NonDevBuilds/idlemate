@@ -19,6 +19,7 @@ import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,10 +34,35 @@ import java.util.UUID;
 public final class FakePlayerManager {
 	private FakePlayerManager() {}
 
-	/** Polymer's per-connection registry lookup key. Setting this before
-	 *  placeNewPlayer prevents the chunk-send NPE that crashes plain Carpet. */
-	private static final PacketContext.Key<RegistryAccess> POLYMER_HOLDER_LOOKUP =
-			PacketContext.key(Identifier.fromNamespaceAndPath("polymer", "holder_lookup"));
+	/**
+	 * Polymer's per-connection registry lookup key.
+	 *
+	 * CRITICAL: must use polymer's ACTUAL Key instance (not a fresh
+	 * PacketContext.key(Identifier "polymer:holder_lookup") with the same id),
+	 * because PacketContextImpl uses an IdentityHashMap — Keys with equal
+	 * Identifiers but different object identities are treated as separate
+	 * entries. Reflecting polymer's static field gives us the exact instance
+	 * that polymer's BlockEntityInfo mixin reads via orElseThrow.
+	 *
+	 * If polymer isn't on the classpath (mod running on a vanilla-Fabric
+	 * server), this is null and we skip the set — no harm, no NPE since the
+	 * polymer mixin isn't present either.
+	 */
+	@SuppressWarnings("unchecked")
+	private static final PacketContext.Key<RegistryAccess> POLYMER_HOLDER_LOOKUP = resolvePolymerHolderLookup();
+
+	private static PacketContext.Key<RegistryAccess> resolvePolymerHolderLookup() {
+		try {
+			Class<?> keys = Class.forName("eu.pb4.polymer.common.impl.CommonImplPacketKeys");
+			Field f = keys.getField("HOLDER_LOOKUP");
+			Object value = f.get(null);
+			BlocFakePlayer.LOG.info("Resolved polymer HOLDER_LOOKUP key: {}", value);
+			return (PacketContext.Key<RegistryAccess>) value;
+		} catch (Throwable e) {
+			BlocFakePlayer.LOG.info("Polymer not present on classpath, skipping holder_lookup set: {}", e.toString());
+			return null;
+		}
+	}
 
 	private static volatile UUID activeId;
 	private static volatile String activeName;
@@ -57,12 +83,15 @@ public final class FakePlayerManager {
 		CommonListenerCookie cookie = new CommonListenerCookie(profile, 0, clientInfo, false);
 
 		// Polymer compat: populate `polymer:holder_lookup` on the connection's
-		// PacketContext BEFORE placeNewPlayer triggers chunk send. The
-		// ServerCommonPacketListenerImpl's getPacketContext() delegates to the
-		// connection's, so setting here covers both lookup paths.
-		PacketContext ctx = ((PacketContextProvider) (Object) connection).getPacketContext();
-		ctx.set(POLYMER_HOLDER_LOOKUP, server.registryAccess());
-		BlocFakePlayer.LOG.info("Pre-spawn polymer holder_lookup set on connection (ctx={})", ctx);
+		// PacketContext BEFORE placeNewPlayer triggers chunk send. Listener's
+		// getPacketContext() delegates to connection's, so setting once covers
+		// both. Skip silently if polymer isn't loaded — server will still work,
+		// no NPE because polymer's mixin isn't present either.
+		if (POLYMER_HOLDER_LOOKUP != null) {
+			PacketContext ctx = ((PacketContextProvider) (Object) connection).getPacketContext();
+			ctx.set(POLYMER_HOLDER_LOOKUP, server.registryAccess());
+			BlocFakePlayer.LOG.info("Pre-spawn polymer holder_lookup set on connection (ctx={})", ctx);
+		}
 
 		PlayerList list = server.getPlayerList();
 		list.placeNewPlayer(connection, player, cookie);
