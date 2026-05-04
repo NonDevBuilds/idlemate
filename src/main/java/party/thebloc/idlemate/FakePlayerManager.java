@@ -1,4 +1,4 @@
-package party.thebloc.fakeplayer;
+package party.thebloc.idlemate;
 
 import com.mojang.authlib.GameProfile;
 import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
@@ -59,10 +59,10 @@ public final class FakePlayerManager {
 			Class<?> keys = Class.forName("eu.pb4.polymer.common.impl.CommonImplPacketKeys");
 			Field f = keys.getField("HOLDER_LOOKUP");
 			Object value = f.get(null);
-			BlocFakePlayer.LOG.info("Resolved polymer HOLDER_LOOKUP key: {}", value);
+			Idlemate.LOG.info("Resolved polymer HOLDER_LOOKUP key: {}", value);
 			return (PacketContext.Key<RegistryAccess>) value;
 		} catch (Throwable e) {
-			BlocFakePlayer.LOG.info("Polymer not present on classpath, skipping holder_lookup set: {}", e.toString());
+			Idlemate.LOG.info("Polymer not present on classpath, skipping holder_lookup set: {}", e.toString());
 			return null;
 		}
 	}
@@ -93,7 +93,7 @@ public final class FakePlayerManager {
 		if (POLYMER_HOLDER_LOOKUP != null) {
 			PacketContext ctx = ((PacketContextProvider) (Object) connection).getPacketContext();
 			ctx.set(POLYMER_HOLDER_LOOKUP, server.registryAccess());
-			BlocFakePlayer.LOG.info("Pre-spawn polymer holder_lookup set on connection (ctx={})", ctx);
+			Idlemate.LOG.info("Pre-spawn polymer holder_lookup set on connection (ctx={})", ctx);
 		}
 
 		PlayerList list = server.getPlayerList();
@@ -112,7 +112,7 @@ public final class FakePlayerManager {
 
 		activeId = uuid;
 		activeName = name;
-		BlocFakePlayer.LOG.info("Spawned fake player '{}' at {} {} {} in {}",
+		Idlemate.LOG.info("Spawned fake player '{}' at {} {} {} in {}",
 				name, pos.x, pos.y, pos.z, level.dimension().identifier());
 
 		// Persist for auto-respawn on next server start.
@@ -133,12 +133,12 @@ public final class FakePlayerManager {
 		ServerPlayer player = server.getPlayerList().getPlayer(id);
 		if (player != null) {
 			player.connection.onDisconnect(
-					new DisconnectionDetails(Component.literal("[bloc_fakeplayer] killed")));
+					new DisconnectionDetails(Component.literal("[idlemate] killed")));
 		}
 		activeId = null;
 		activeName = null;
 		FakePlayerPersistence.delete(server);
-		BlocFakePlayer.LOG.info("Killed fake player '{}'", name);
+		Idlemate.LOG.info("Killed fake player '{}'", name);
 		return KillResult.killed(name);
 	}
 
@@ -157,7 +157,7 @@ public final class FakePlayerManager {
 		java.util.UUID id = activeId;
 		if (id == null || id.equals(joiner.getUUID())) return;
 		joiner.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(id)));
-		BlocFakePlayer.LOG.info("[bloc-fakeplayer] sent tab-list-remove({}) to {}", id, joiner.getName().getString());
+		Idlemate.LOG.info("[idlemate] sent tab-list-remove({}) to {}", id, joiner.getName().getString());
 	}
 
 	/**
@@ -174,18 +174,18 @@ public final class FakePlayerManager {
 					Identifier.parse(r.dimension()));
 			ServerLevel level = server.getLevel(dimKey);
 			if (level == null) {
-				BlocFakePlayer.LOG.warn("[bloc-fakeplayer] persisted dimension '{}' not found; clearing record", r.dimension());
+				Idlemate.LOG.warn("[idlemate] persisted dimension '{}' not found; clearing record", r.dimension());
 				FakePlayerPersistence.delete(server);
 				return;
 			}
 			SpawnResult result = spawn(server, r.name(), level, new Vec3(r.x(), r.y(), r.z()), r.yaw(), r.pitch());
 			if (result instanceof SpawnResult.Spawned) {
-				BlocFakePlayer.LOG.info("Auto-respawned fake player '{}' from persistence", r.name());
+				Idlemate.LOG.info("Auto-respawned fake player '{}' from persistence", r.name());
 			} else {
-				BlocFakePlayer.LOG.warn("[bloc-fakeplayer] auto-respawn unexpected result: {}", result);
+				Idlemate.LOG.warn("[idlemate] auto-respawn unexpected result: {}", result);
 			}
 		} catch (Exception e) {
-			BlocFakePlayer.LOG.warn("[bloc-fakeplayer] auto-respawn failed ({}); clearing record", e.getMessage());
+			Idlemate.LOG.warn("[idlemate] auto-respawn failed ({}); clearing record", e.getMessage());
 			FakePlayerPersistence.delete(server);
 		}
 	}

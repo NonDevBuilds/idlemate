@@ -1,4 +1,4 @@
-package party.thebloc.fakeplayer;
+package party.thebloc.idlemate;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -6,10 +6,10 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.TickTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import party.thebloc.fakeplayer.command.FakePlayerCommand;
+import party.thebloc.idlemate.command.FakePlayerCommand;
 
-public final class BlocFakePlayer implements DedicatedServerModInitializer {
-	public static final String MOD_ID = "bloc_fakeplayer";
+public final class Idlemate implements DedicatedServerModInitializer {
+	public static final String MOD_ID = "idlemate";
 	public static final Logger LOG = LoggerFactory.getLogger(MOD_ID);
 
 	@Override
@@ -26,6 +26,6 @@ public final class BlocFakePlayer implements DedicatedServerModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 				server.schedule(new TickTask(server.getTickCount() + 20,
 						() -> FakePlayerManager.hideActiveFromJoiner(handler.player))));
-		LOG.info("bloc-fakeplayer loaded.");
+		LOG.info("idlemate loaded.");
 	}
 }

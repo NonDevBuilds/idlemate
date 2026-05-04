@@ -1,4 +1,4 @@
-package party.thebloc.fakeplayer;
+package party.thebloc.idlemate;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -8,7 +8,7 @@ import net.minecraft.network.ProtocolInfo;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import org.jspecify.annotations.Nullable;
-import party.thebloc.fakeplayer.mixin.ConnectionAccessor;
+import party.thebloc.idlemate.mixin.ConnectionAccessor;
 
 /**
  * Synthetic Connection for fake players. No network socket — just an
@@ -27,7 +27,7 @@ public final class FakeConnection extends Connection {
 		// EmbeddedChannel makes isOpen() return true. Required for chunk send
 		// paths to actually try to deliver to this connection.
 		// Cast via Object — javac doesn't see the mixin-applied interface at compile time.
-		((ConnectionAccessor) (Object) this).bloc_fakeplayer$setChannel(new EmbeddedChannel());
+		((ConnectionAccessor) (Object) this).idlemate$setChannel(new EmbeddedChannel());
 	}
 
 	@Override

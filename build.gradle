@@ -21,7 +21,7 @@ repositories {
 loom {
 	// Server-side only — no client source set, no client-only classes can sneak in.
 	mods {
-		"bloc_fakeplayer" {
+		"idlemate" {
 			sourceSet sourceSets.main
 		}
 	}

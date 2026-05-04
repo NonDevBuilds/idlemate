@@ -1,4 +1,4 @@
-package party.thebloc.fakeplayer;
+package party.thebloc.idlemate;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * Persists the active fake player across server restarts.
  *
- * Storage: a single JSON file at {server runDir}/bloc-fakeplayer.json. Written
+ * Storage: a single JSON file at {server runDir}/idlemate.json. Written
  * on /fakeplayer spawn, deleted on /fakeplayer kill. Read once at
  * SERVER_STARTED and used to re-spawn the same fake player at the same
  * position automatically.
@@ -24,7 +24,7 @@ import java.util.Optional;
 public final class FakePlayerPersistence {
 	private FakePlayerPersistence() {}
 
-	private static final String FILE_NAME = "bloc-fakeplayer.json";
+	private static final String FILE_NAME = "idlemate.json";
 	private static final Gson GSON = new Gson();
 
 	public record Record(String name, String dimension, double x, double y, double z, float yaw, float pitch) {}
@@ -37,7 +37,7 @@ public final class FakePlayerPersistence {
 		try {
 			Files.writeString(filePath(server), GSON.toJson(r));
 		} catch (IOException e) {
-			BlocFakePlayer.LOG.warn("[bloc-fakeplayer] failed to save persistence: {}", e.getMessage());
+			Idlemate.LOG.warn("[idlemate] failed to save persistence: {}", e.getMessage());
 		}
 	}
 
@@ -45,7 +45,7 @@ public final class FakePlayerPersistence {
 		try {
 			Files.deleteIfExists(filePath(server));
 		} catch (IOException e) {
-			BlocFakePlayer.LOG.warn("[bloc-fakeplayer] failed to delete persistence: {}", e.getMessage());
+			Idlemate.LOG.warn("[idlemate] failed to delete persistence: {}", e.getMessage());
 		}
 	}
 
@@ -56,13 +56,13 @@ public final class FakePlayerPersistence {
 			String json = Files.readString(p);
 			Record r = GSON.fromJson(json, Record.class);
 			if (r == null || r.name == null || r.dimension == null) {
-				BlocFakePlayer.LOG.warn("[bloc-fakeplayer] persistence file malformed; deleting");
+				Idlemate.LOG.warn("[idlemate] persistence file malformed; deleting");
 				delete(server);
 				return Optional.empty();
 			}
 			return Optional.of(r);
 		} catch (IOException | JsonSyntaxException e) {
-			BlocFakePlayer.LOG.warn("[bloc-fakeplayer] persistence load failed ({}); deleting", e.getMessage());
+			Idlemate.LOG.warn("[idlemate] persistence load failed ({}); deleting", e.getMessage());
 			delete(server);
 			return Optional.empty();
 		}

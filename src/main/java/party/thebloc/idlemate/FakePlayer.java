@@ -1,4 +1,4 @@
-package party.thebloc.fakeplayer;
+package party.thebloc.idlemate;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;

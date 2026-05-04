@@ -1,4 +1,4 @@
-package party.thebloc.fakeplayer.command;
+package party.thebloc.idlemate.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -13,7 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import party.thebloc.fakeplayer.FakePlayerManager;
+import party.thebloc.idlemate.FakePlayerManager;
 
 import java.util.regex.Pattern;
 

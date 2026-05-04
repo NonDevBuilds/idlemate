@@ -1,20 +1,21 @@
 {
 	"schemaVersion": 1,
-	"id": "bloc_fakeplayer",
+	"id": "idlemate",
 	"version": "${version}",
-	"name": "The Bloc FakePlayer",
-	"description": "Single fake-player slot for AFK farms — polymer-compatible alternative to Carpet's /player spawn.",
+	"name": "Idlemate",
+	"description": "Single-bot AFK farm helper for Fabric servers — polymer-compatible alternative to Carpet's /player spawn.",
 	"authors": ["itzmeelo"],
 	"contact": {
-		"sources": "https://github.com/itzmeelo/bloc-fakeplayer"
+		"sources": "https://github.com/itzmeelo/idlemate",
+		"issues": "https://github.com/itzmeelo/idlemate/issues"
 	},
 	"license": "MIT",
 	"environment": "server",
 	"entrypoints": {
-		"server": ["party.thebloc.fakeplayer.BlocFakePlayer"]
+		"server": ["party.thebloc.idlemate.Idlemate"]
 	},
 	"mixins": [
-		"bloc_fakeplayer.mixins.json"
+		"idlemate.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.18.6",

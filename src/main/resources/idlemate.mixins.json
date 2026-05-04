@@ -1,6 +1,6 @@
 {
 	"required": true,
-	"package": "party.thebloc.fakeplayer.mixin",
+	"package": "party.thebloc.idlemate.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"ConnectionAccessor"

@@ -1,4 +1,4 @@
-# bloc-fakeplayer
+# idlemate
 
 Server-side Fabric mod that gives you a single fake-player slot for keeping AFK farms running on Polymer-using servers. Replaces Carpet's `/player spawn` — which crashes Polymer servers — with a focused, persistent, single-bot alternative.
 
@@ -32,7 +32,7 @@ If you need attack-hold, walk paths, multiple bots, or any of Carpet's other 50 
 
 ## Install
 
-1. Drop `bloc-fakeplayer-X.Y.Z.jar` into `<server>/mods/`
+1. Drop `idlemate-X.Y.Z.jar` into `<server>/mods/`
 2. Restart the server
 3. Op yourself in-game (or use RCON, which has implicit op level 4)
 
@@ -57,7 +57,7 @@ If you need attack-hold, walk paths, multiple bots, or any of Carpet's other 50 
 
 ## Persistence
 
-When you spawn a bot, the mod writes `<server-runDir>/bloc-fakeplayer.json`:
+When you spawn a bot, the mod writes `<server-runDir>/idlemate.json`:
 
 ```json
 {"name":"BlocBot1","dimension":"minecraft:overworld","x":146.75,"y":190.5,"z":325.37,"yaw":79.20278,"pitch":34.350147}
@@ -71,7 +71,7 @@ If the file becomes invalid (unparseable JSON, missing dimension) the mod logs a
 
 ```sh
 ./gradlew build
-# Output: build/libs/bloc-fakeplayer-0.1.0.jar
+# Output: build/libs/idlemate-0.1.0.jar
 ```
 
 Requires Java 25 + a working internet connection (Loom downloads MC mappings on first build).
