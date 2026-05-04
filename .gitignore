@@ -10,3 +10,7 @@ run/
 logs/
 local.properties
 *.local.*
+
+# Dev-internal — not for the public repo
+CLAUDE.md
+PLAN.md
