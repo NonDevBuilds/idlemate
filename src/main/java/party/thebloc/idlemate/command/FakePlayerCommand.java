@@ -41,6 +41,8 @@ public final class FakePlayerCommand {
 						.executes(FakePlayerCommand::kill))
 					.then(Commands.literal("info")
 						.executes(FakePlayerCommand::info))
+					.then(Commands.literal("save")
+						.executes(FakePlayerCommand::save))
 			);
 		});
 	}
@@ -122,6 +124,20 @@ public final class FakePlayerCommand {
 				yield 0;
 			}
 		};
+	}
+
+	private static int save(CommandContext<CommandSourceStack> ctx) {
+		CommandSourceStack src = ctx.getSource();
+		var snap = FakePlayerManager.savePosition(src.getServer());
+		if (snap.isEmpty()) {
+			src.sendFailure(Component.literal("No fake player is active."));
+			return 0;
+		}
+		var i = snap.get();
+		src.sendSuccess(() -> Component.literal(String.format(
+				"Saved fake player '%s' at %.1f %.1f %.1f in %s",
+				i.name(), i.position().x, i.position().y, i.position().z, i.dimension())), true);
+		return Command.SINGLE_SUCCESS;
 	}
 
 	private static int info(CommandContext<CommandSourceStack> ctx) {

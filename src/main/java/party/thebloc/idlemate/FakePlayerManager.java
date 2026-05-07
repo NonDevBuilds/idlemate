@@ -190,6 +190,25 @@ public final class FakePlayerManager {
 		}
 	}
 
+	/**
+	 * Capture the active fake player's current position into persistence.
+	 * Used by /fakeplayer save (manual) and SERVER_STOPPING (graceful shutdown)
+	 * to preserve drift from knockback / /tp / water flow / etc.
+	 *
+	 * Returns the snapshot that was saved, or empty if no fake player is active.
+	 */
+	public static synchronized Optional<Info> savePosition(MinecraftServer server) {
+		Optional<Info> current = info(server);
+		if (current.isEmpty()) return Optional.empty();
+		Info i = current.get();
+		ServerPlayer player = server.getPlayerList().getPlayer(activeId);
+		float yaw = player != null ? player.getYRot() : 0f;
+		float pitch = player != null ? player.getXRot() : 0f;
+		FakePlayerPersistence.save(server, new FakePlayerPersistence.Record(
+				i.name(), i.dimension(), i.position().x, i.position().y, i.position().z, yaw, pitch));
+		return current;
+	}
+
 	public static synchronized Optional<Info> info(MinecraftServer server) {
 		UUID id = activeId;
 		if (id == null) return Optional.empty();

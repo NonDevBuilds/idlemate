@@ -19,6 +19,14 @@ public final class Idlemate implements DedicatedServerModInitializer {
 		// dimensions are loaded but before players begin connecting, which is
 		// what we want — chunks are ready, polymer is initialized.
 		ServerLifecycleEvents.SERVER_STARTED.register(FakePlayerManager::tryRestoreFromPersistence);
+		// Capture current position before graceful shutdown so a normal restart
+		// preserves any drift (knockback, /tp, water flow). On crash this won't
+		// fire; falls back to whatever was last persisted on spawn or /fakeplayer save.
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			if (FakePlayerManager.savePosition(server).isPresent()) {
+				LOG.info("Saved fake player position on shutdown.");
+			}
+		});
 		// Hide the active fake player from each newly-joined player's tab list.
 		// JOIN fires before vanilla sends the bulk player-info-update with the
 		// full list (with bot listed=true). Schedule the Remove ~1s ahead so

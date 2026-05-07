@@ -53,6 +53,11 @@ If you need attack-hold, walk paths, multiple bots, or any of Carpet's other 50 
 /fakeplayer info
     Print the active fake player's name and coords, or "no fake player
     is active" if none.
+
+/fakeplayer save
+    Capture the active fake player's CURRENT position into the persistence
+    file. Useful after the bot drifted (knockback, /tp, water flow) so the
+    next restart respawns at the right spot. No-op if no fake player active.
 ```
 
 ## Persistence
@@ -65,13 +70,18 @@ When you spawn a bot, the mod writes `<server-runDir>/idlemate.json`:
 
 On `SERVER_STARTED` the mod reads this file and re-spawns the same bot at the same spot, automatically. `/fakeplayer kill` deletes the file.
 
+The file is rewritten on:
+- `/fakeplayer spawn` (and `spawn-at`) — initial coords
+- `/fakeplayer save` — capture current drifted position manually
+- `SERVER_STOPPING` — graceful shutdown auto-saves the bot's current position so a normal restart preserves drift. Crashes don't fire this event; for crash resilience run `/fakeplayer save` periodically.
+
 If the file becomes invalid (unparseable JSON, missing dimension) the mod logs a warning, deletes the file, and skips the auto-respawn. The server **never crash-loops on a bad persistence record** — auto-respawn is best-effort, never load-bearing.
 
 ## Building
 
 ```sh
 ./gradlew build
-# Output: build/libs/idlemate-0.1.0.jar
+# Output: build/libs/idlemate-0.2.0.jar
 ```
 
 Requires Java 25 + a working internet connection (Loom downloads MC mappings on first build).
