@@ -6,8 +6,8 @@
 	"description": "Single-bot AFK farm helper for Fabric servers — polymer-compatible alternative to Carpet's /player spawn.",
 	"authors": ["itzmeelo"],
 	"contact": {
-		"sources": "https://github.com/itzmeelo/idlemate",
-		"issues": "https://github.com/itzmeelo/idlemate/issues"
+		"sources": "https://github.com/NonDevBuilds/idlemate",
+		"issues": "https://github.com/NonDevBuilds/idlemate/issues"
 	},
 	"license": "MIT",
 	"environment": "server",
